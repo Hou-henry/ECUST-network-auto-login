@@ -13,7 +13,7 @@
 
 - Python 3.8+
 - [ChromeDriver](https://sites.google.com/chromium.org/driver/)（需与本地 Chrome 浏览器版本匹配）
-- Python 库：selenium
+- Python 库：selenium python-dotenv
 
 安装依赖：
 
