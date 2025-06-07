@@ -1,3 +1,8 @@
+import os
+import platform
+from dotenv import load_dotenv
+from pathlib import Path
+from dotenv import set_key
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -6,7 +11,19 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
-chrome_driver_path = "./chromedriver"  # 替换为你的实际 chromedriver 路径
+env_path = Path(".env")
+if not env_path.exists():
+    env_path.touch()
+
+load_dotenv()
+
+system_name = platform.system()
+if system_name == "Windows":
+    chrome_driver_path = "./chromedriver_win.exe"
+elif system_name == "Darwin":  # macOS
+    chrome_driver_path = "./chromedriver_mac"
+else:  # Assume Linux
+    chrome_driver_path = "./chromedriver_linux"
 
 def is_logged_in():
     """
@@ -36,7 +53,7 @@ def is_logged_in():
     finally:
         driver.quit()
 
-def login():
+def login(username,password):
     """
     执行自动登录操作
     """
@@ -62,11 +79,11 @@ def login():
         wait = WebDriverWait(driver, 10)
         username_input = wait.until(EC.element_to_be_clickable((By.ID, "username")))
         username_input.clear()
-        username_input.send_keys("Y80230044")
+        username_input.send_keys(username)
 
         password_input = driver.find_element(By.ID, "password")
         password_input.clear()
-        password_input.send_keys("09190015Ecust#")
+        password_input.send_keys(password)
 
         login_button = driver.find_element(By.CSS_SELECTOR, "input[type='submit']")
         login_button.click()
@@ -79,10 +96,19 @@ def login():
         driver.quit()
 
 if __name__ == "__main__":
+    # 命令行参数解析后检查用户名和密码
+    username = os.getenv("CAMPUS_USERNAME")
+    password = os.getenv("CAMPUS_PASSWORD")
+    if not username:
+        username = input("请输入校园网账号：")
+        set_key(".env", "CAMPUS_USERNAME", username)
+    if not password:
+        password = input("请输入校园网密码：")
+        set_key(".env", "CAMPUS_PASSWORD", password)
     while True:
         if not is_logged_in():
             print("未登录，开始自动登录...")
-            login()
+            login(username,password)
         else:
             print("网络已登录，无需操作")
         time.sleep(60)  # 每60秒检测一次
