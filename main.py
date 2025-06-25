@@ -1,3 +1,6 @@
+from datetime import datetime
+
+import json
 import os
 import platform
 from dotenv import load_dotenv
@@ -105,10 +108,41 @@ if __name__ == "__main__":
     if not password:
         password = input("请输入校园网密码：")
         set_key(".env", "CAMPUS_PASSWORD", password)
-    while True:
-        if not is_logged_in():
-            print("未登录，开始自动登录...")
-            login(username,password)
+last_login_time = None  # 初始化上次登录时间
+
+while True:
+    if not is_logged_in():
+        now = datetime.now()
+        print("未登录，开始自动登录...")
+
+        # 计算上次登录间隔
+        if last_login_time is not None:
+            elapsed = (now - last_login_time).total_seconds()
         else:
-            print("网络已登录，无需操作")
-        time.sleep(60)  # 每60秒检测一次
+            elapsed = None
+
+        # 执行登录操作
+        login(username, password)
+
+        # 记录当前时间为上次登录时间
+        previous_login_str = last_login_time.strftime("%Y-%m-%d %H:%M:%S") if last_login_time else None
+        last_login_time = now
+
+        # 构造日志数据
+        log_data = {
+            "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
+            "last_login": previous_login_str,
+            "elapsed_min": int(elapsed)/60 if elapsed is not None else None
+        }
+
+        # 控制台输出 JSON 日志
+        print(json.dumps(log_data, ensure_ascii=False, indent=2))
+
+        # 写入文件
+        with open("login_log.jsonl", "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_data, ensure_ascii=False) + "\n")
+
+    else:
+        print("网络已登录，无需操作")
+
+    time.sleep(60)
